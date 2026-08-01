@@ -155,12 +155,12 @@
             <h1>Item Analysis</h1>
             
             <div class="results-box">
-                <h3 id="item-title">Analyzing item...</h3>
-                <p><strong>Estimated Value:</strong> <span id="item-value" style="color: #00ffcc;">Calculating...</span></p>
+                <h3 id="item-title">Identifying item...</h3>
+                <p><strong>Estimated Value:</strong> <span id="item-value" style="color: #00ffcc;">Searching markets...</span></p>
                 <p style="margin-bottom: 8px;"><strong>Estimated Sells:</strong></p>
-                <div class="platform-row"><span>eBay:</span> <strong id="val-ebay">-</strong></div>
-                <div class="platform-row"><span>Whatnot:</span> <strong id="val-whatnot">-</strong></div>
-                <div class="platform-row" style="border:none;"><span>Facebook Marketplace:</span> <strong id="val-fb">-</strong></div>
+                <div class="platform-row"><span>eBay:</span> <strong id="val-ebay">Loading...</strong></div>
+                <div class="platform-row"><span>Whatnot:</span> <strong id="val-whatnot">Loading...</strong></div>
+                <div class="platform-row" style="border:none;"><span>Facebook Marketplace:</span> <strong id="val-fb">Loading...</strong></div>
             </div>
 
             <div class="results-box" style="text-align: center;">
@@ -176,8 +176,7 @@
     </div>
 
     <script>
-        // PASTE YOUR GEMINI API KEY BELOW INSIDE THE QUOTES:
-        const GEMINI_API_KEY = "YOUR_API_KEY_HERE";
+        const GEMINI_API_KEY = "AQ.Ab8RN6ILL5jXzycrY1JsTHMsrylPITYW00vNj4_9pQWj83vrUg";
 
         const video = document.getElementById('camera-stream');
         const canvas = document.getElementById('photo-canvas');
@@ -219,7 +218,6 @@
 
             stopCamera();
             
-            // Switch to results window and show loading state
             switchView('results-view');
             document.getElementById('item-title').innerText = "Identifying item...";
             document.getElementById('item-value').innerText = "Searching markets...";
@@ -227,18 +225,10 @@
             document.getElementById('val-whatnot').innerText = "Loading...";
             document.getElementById('val-fb').innerText = "Loading...";
 
-            // Send image to Gemini API
             await analyzeImageWithGemini(imageDataUrl);
         });
 
         async function analyzeImageWithGemini(dataUrl) {
-            if (GEMINI_API_KEY === "YOUR_API_KEY_HERE" || !GEMINI_API_KEY) {
-                alert("Please paste your Gemini API key into the script code!");
-                switchView('home-view');
-                return;
-            }
-
-            // Strip prefix to get pure base64 string
             const base64Image = dataUrl.split(',')[1];
 
             const promptText = "Identify this item precisely (e.g., specific brand, character, era, or model like a Sonic the Hedgehog action figure). Provide an estimated overall market value and estimated selling ranges for eBay, Whatnot, and Facebook Marketplace. Format your response strictly as JSON with keys: title, estimatedValue, ebay, whatnot, facebook.";
@@ -267,11 +257,9 @@
                 const data = await response.json();
                 const textResponse = data.candidates[0].content.parts[0].text;
                 
-                // Clean up markdown block if model wraps json in ticks
                 const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
                 const itemData = JSON.parse(cleanJson);
 
-                // Update UI with real data
                 document.getElementById('item-title').innerText = itemData.title;
                 document.getElementById('item-value').innerText = itemData.estimatedValue;
                 document.getElementById('val-ebay').innerText = itemData.ebay;
