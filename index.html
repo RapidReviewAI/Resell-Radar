@@ -17,6 +17,41 @@
             max-width: 420px;
             margin: 0 auto;
         }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .menu-card {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 20px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #fff;
+            font-weight: bold;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+        .menu-card:hover {
+            background: #2a2a2a;
+            border-color: #00ffcc;
+        }
+        .menu-card.primary {
+            grid-column: span 2;
+            background: #00ffcc;
+            color: #000;
+        }
+        .menu-card.primary:hover {
+            background: #00cca3;
+        }
         .media-container {
             position: relative;
             width: 100%;
@@ -46,15 +81,37 @@
             font-weight: bold; 
             width: 100%;
         }
-        #snap-btn {
-            background: #ff0055;
-            color: #ffffff;
-            display: none;
-        }
-        #retake-btn {
+        .secondary-btn {
             background: #333333;
             color: #ffffff;
-            display: none;
+        }
+        .danger-btn {
+            background: #ff0055;
+            color: #ffffff;
+        }
+        .results-box {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+            border: 1px solid #333;
+        }
+        .results-box h3 {
+            margin-top: 0;
+            color: #00ffcc;
+        }
+        .platform-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 14px;
+        }
+        .purchase-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
         }
         #status {
             margin-top: 15px;
@@ -65,84 +122,114 @@
 </head>
 <body>
     <div class="container">
-        <h1>ResellRadar</h1>
-        <p>Frame your item and tap <strong>Take Photo</strong> to analyze it.</p>
-        
-        <div class="media-container">
-            <video id="camera-stream" autoplay playsinline style="display:none;"></video>
-            <canvas id="photo-canvas" style="display:none;"></canvas>
-            <div id="placeholder" style="color: #666;">Camera Offline</div>
+        <!-- VIEW 1: HOME SCREEN -->
+        <div id="home-view" class="view active">
+            <h1>ResellRadar</h1>
+            <p>Select an option to get started:</p>
+            <div class="menu-grid">
+                <button class="menu-card primary" onclick="switchView('scanner-view'); startCamera();">📸 Scan Item (Camera)</button>
+                <div class="menu-card" onclick="alert('Feature coming soon!')">📦 Inventory</div>
+                <div class="menu-card" onclick="alert('Feature coming soon!')">🏷️ Sourcing Hub</div>
+                <div class="menu-card" onclick="alert('Feature coming soon!')">📊 Sales History</div>
+                <div class="menu-card" onclick="alert('Feature coming soon!')">⚙️ Settings</div>
+            </div>
         </div>
 
-        <button id="start-btn">Turn On Camera</button>
-        <button id="snap-btn">📸 Take Photo</button>
-        <button id="retake-btn">🔄 Retake Photo</button>
+        <!-- VIEW 2: SCANNER SCREEN -->
+        <div id="scanner-view" class="view">
+            <h1>Camera Scanner</h1>
+            <p>Frame your item and tap <strong>Take Photo</strong>.</p>
+            
+            <div class="media-container">
+                <video id="camera-stream" autoplay playsinline></video>
+                <canvas id="photo-canvas" style="display:none;"></canvas>
+            </div>
 
-        <div id="status"></div>
+            <button id="snap-btn" class="danger-btn">📸 Take Photo</button>
+            <button class="secondary-btn" onclick="stopCamera(); switchView('home-view');">⬅️ Back to Home</button>
+            <div id="status"></div>
+        </div>
+
+        <!-- VIEW 3: RESULTS SCREEN -->
+        <div id="results-view" class="view">
+            <h1>Item Analysis</h1>
+            
+            <div class="results-box">
+                <h3 id="item-title">Vintage Comic Book</h3>
+                <p><strong>Estimated Value:</strong> <span id="item-value" style="color: #00ffcc;">$45.00</span></p>
+                <p style="margin-bottom: 8px;"><strong>Estimated Sells:</strong></p>
+                <div class="platform-row"><span>eBay:</span> <strong id="val-ebay">$40.00 - $50.00</strong></div>
+                <div class="platform-row"><span>Whatnot:</span> <strong id="val-whatnot">$35.00 - $45.00</strong></div>
+                <div class="platform-row" style="border:none;"><span>Facebook Marketplace:</span> <strong id="val-fb">$40.00</strong></div>
+            </div>
+
+            <div class="results-box" style="text-align: center;">
+                <p style="margin-top:0;">Did you purchase this item?</p>
+                <div class="purchase-actions">
+                    <button class="secondary-btn" style="margin-top:0;" onclick="handlePurchase(false)">Pass / No</button>
+                    <button style="margin-top:0; background:#00ffcc; color:#000;" onclick="handlePurchase(true)">Yes, Purchased!</button>
+                </div>
+            </div>
+
+            <button class="secondary-btn" onclick="switchView('home-view')">🏠 Return to Home</button>
+        </div>
     </div>
 
     <script>
-        const startBtn = document.getElementById('start-btn');
-        const snapBtn = document.getElementById('snap-btn');
-        const retakeBtn = document.getElementById('retake-btn');
         const video = document.getElementById('camera-stream');
         const canvas = document.getElementById('photo-canvas');
-        const placeholder = document.getElementById('placeholder');
         const status = document.getElementById('status');
-
         let mediaStream = null;
 
-        startBtn.addEventListener('click', async () => {
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        async function startCamera() {
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
                 });
                 video.srcObject = mediaStream;
-                
-                placeholder.style.display = 'none';
-                canvas.style.display = 'none';
-                video.style.display = 'block';
-                
-                startBtn.style.display = 'none';
-                snapBtn.style.display = 'block';
-                retakeBtn.style.display = 'none';
                 status.innerText = '';
             } catch (err) {
                 alert('Camera access denied or unavailable: ' + err.message);
+                switchView('home-view');
             }
-        });
+        }
 
-        snapBtn.addEventListener('click', () => {
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+        }
+
+        document.getElementById('snap-btn').addEventListener('click', () => {
             const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-            
-            snapBtn.style.display = 'none';
-            retakeBtn.style.display = 'block';
-            
-            status.innerText = 'Analyzing image...';
-
             const imageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            processCapturedImage(imageDataUrl);
-        });
 
-        retakeBtn.addEventListener('click', () => {
-            canvas.style.display = 'none';
-            video.style.display = 'block';
-            
-            retakeBtn.style.display = 'none';
-            snapBtn.style.display = 'block';
+            stopCamera();
             status.innerText = '';
+            
+            // Switch to results window
+            switchView('results-view');
+            
+            // Here is where your Gemini API image analysis call will process imageDataUrl
         });
 
-        function processCapturedImage(base64Data) {
-            console.log("Photo captured and ready for processing.");
-            status.innerText = 'Photo captured successfully! Reading data...';
+        function handlePurchase(didBuy) {
+            if (didBuy) {
+                alert('Item saved to your inventory/purchases!');
+            } else {
+                alert('Item passed.');
+            }
+            switchView('home-view');
         }
     </script>
 </body>
