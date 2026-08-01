@@ -5,37 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResellRadar</title>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #121212; color: #fff; text-align: center; }
-        video { width: 100%; max-width: 400px; border-radius: 8px; margin-top: 15px; }
-        button { background: #00ffcc; color: #000; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #121212; 
+            color: #ffffff; 
+            text-align: center; 
+        }
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .media-container {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        video, canvas { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        button { 
+            background: #00ffcc; 
+            color: #000000; 
+            border: none; 
+            padding: 14px 24px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-top: 15px; 
+            font-weight: bold; 
+            width: 100%;
+        }
+        #snap-btn {
+            background: #ff0055;
+            color: #ffffff;
+            display: none;
+        }
+        #retake-btn {
+            background: #333333;
+            color: #ffffff;
+            display: none;
+        }
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #00ffcc;
+        }
     </style>
 </head>
 <body>
-    <h1>ResellRadar</h1>
-    <p>Point your camera at items to scan and price them instantly.</p>
-    <div>
-        <button id="start-camera">Turn On Camera</button>
-    </div>
-    <div>
-        <video id="camera-stream" autoplay playsinline style="display:none;"></video>
+    <div class="container">
+        <h1>ResellRadar</h1>
+        <p>Frame your item and tap <strong>Take Photo</strong> to analyze it.</p>
+        
+        <div class="media-container">
+            <video id="camera-stream" autoplay playsinline style="display:none;"></video>
+            <canvas id="photo-canvas" style="display:none;"></canvas>
+            <div id="placeholder" style="color: #666;">Camera Offline</div>
+        </div>
+
+        <button id="start-btn">Turn On Camera</button>
+        <button id="snap-btn">📸 Take Photo</button>
+        <button id="retake-btn">🔄 Retake Photo</button>
+
+        <div id="status"></div>
     </div>
 
     <script>
-        const startBtn = document.getElementById('start-camera');
+        const startBtn = document.getElementById('start-btn');
+        const snapBtn = document.getElementById('snap-btn');
+        const retakeBtn = document.getElementById('retake-btn');
         const video = document.getElementById('camera-stream');
+        const canvas = document.getElementById('photo-canvas');
+        const placeholder = document.getElementById('placeholder');
+        const status = document.getElementById('status');
+
+        let mediaStream = null;
 
         startBtn.addEventListener('click', async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                video.srcObject = stream;
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                video.srcObject = mediaStream;
+                
+                placeholder.style.display = 'none';
+                canvas.style.display = 'none';
                 video.style.display = 'block';
+                
                 startBtn.style.display = 'none';
+                snapBtn.style.display = 'block';
+                retakeBtn.style.display = 'none';
+                status.innerText = '';
             } catch (err) {
                 alert('Camera access denied or unavailable: ' + err.message);
             }
         });
+
+        snapBtn.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            
+            snapBtn.style.display = 'none';
+            retakeBtn.style.display = 'block';
+            
+            status.innerText = 'Analyzing image...';
+
+            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            processCapturedImage(imageDataUrl);
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            canvas.style.display = 'none';
+            video.style.display = 'block';
+            
+            retakeBtn.style.display = 'none';
+            snapBtn.style.display = 'block';
+            status.innerText = '';
+        });
+
+        function processCapturedImage(base64Data) {
+            console.log("Photo captured and ready for processing.");
+            status.innerText = 'Photo captured successfully! Reading data...';
+        }
     </script>
-</body>
-</html>    </script>
 </body>
 </html>
