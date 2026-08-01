@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResellRadar</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #121212; color: #fff; text-align: center; }
+        video { width: 100%; max-width: 400px; border-radius: 8px; margin-top: 15px; }
+        button { background: #00ffcc; color: #000; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>ResellRadar</h1>
+    <p>Point your camera at items to scan and price them instantly.</p>
+    <div>
+        <button id="start-camera">Turn On Camera</button>
+    </div>
+    <div>
+        <video id="camera-stream" autoplay playsinline style="display:none;"></video>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-camera');
+        const video = document.getElementById('camera-stream');
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startBtn.style.display = 'none';
+            } catch (err) {
+                alert('Camera access denied or unavailable: ' + err.message);
+            }
+        });
+    </script>
+</body>
+</html>
